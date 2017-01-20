@@ -4,3 +4,4 @@
 scratch
 __pycache__
 *.log 
+BUG deal with exception when running scrapy cli
