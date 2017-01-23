@@ -3,9 +3,11 @@ import requests
 import pprint
 import re
 import csv
+import logging
 from datetime import date
 
 PRICE_RE = re.compile('^\d+\.\d+$')
+logging.basicConfig(filename='stock_price.log', level=logging.DEBUG)
 codes = ['ATM','AFC','AFT','A01C','WIN'] # TODO get from search page
 with open('stock_prices.csv', 'a') as f:
     csvwriter = csv.writer(f)
@@ -15,9 +17,6 @@ with open('stock_prices.csv', 'a') as f:
         try:
             stock_price = float(soup.find(name='span', text=PRICE_RE).text)
         except ValueError:
-            print('Error in extracting stock price')
-        pprint.pprint(stock_price)
-        # TODO write results to file
+            logging.warning('Could not retrieve stock price from %s' % code)
+        logging.info('Retrieved stock price for %s: %f' % (code, stock_price,))
         csvwriter.writerow([date.today(), code, stock_price])
-
-        # TODO log errors in seperate file
