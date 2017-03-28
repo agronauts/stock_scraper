@@ -9,7 +9,7 @@ import requests as r
 def is_price_row(row):
     return 'class' in row.attrs
 
-def get_stock_prices(code_prices):
+def get_stock_prices(codes):
     page = r.get(QUERY_URL_FMT % '+'.join(codes)).content.decode()
     soup = bs4.BeautifulSoup(page, 'html.parser')
     rows = list(row for row in soup.find_all('tr') if is_price_row(row))
