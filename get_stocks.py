@@ -11,11 +11,12 @@ import sys
 from datetime import datetime
 
 logging.basicConfig(
-    # filename='stock_price.log',
+    filename='stock_price.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%d/%m/%Y %I:%M:%S %p'
 )
+logging.getLogger('').addHandler(logging.StreamHandler())
 
 QUERY_URL_FMT = "http://www.asx.com.au/asx/markets/equityPrices.do?by=asxCodes&asxCodes=%s"
 
