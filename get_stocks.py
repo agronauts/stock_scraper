@@ -45,7 +45,7 @@ def get_NZX_stock_prices(codes):
 
 def read_stock_codes():
     codes = {}
-    with open('stock_codes.csv') as f:
+    with open('./stock_codes.csv', encoding='utf-8-sig') as f:
         for code in f.readlines():
             stock, market = code.strip().split('.')
             codes.setdefault(market, []).append(stock)
