@@ -89,7 +89,7 @@ def main(argv):
     # Write to file for first time
     if not os.path.isfile(path):
         logging.info("Stock prices file not found: Creating new one at %s" % os.path.abspath(path))
-        with open(path, 'w') as f:
+        with open(path, 'w', newline='') as f:
             csvwriter = csv.writer(f)
             codes = sorted(all_prices.keys())
             codes_market = []
@@ -106,7 +106,7 @@ def main(argv):
     # Add new values
     # TODO Try refactor with numpy
     logging.info("Adding current stock prices")
-    with open(path, 'a') as f:
+    with open(path, 'a', newline='') as f:
         # Write date + price
         # TODO Check if today's prices are already saved
         csvwriter = csv.writer(f)
