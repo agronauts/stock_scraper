@@ -14,8 +14,6 @@ from datetime import datetime
 logging.StreamHandler(sys.stdout).setLevel(logging.DEBUG)
 
 QUERY_URL_FMT = "http://www.asx.com.au/asx/markets/equityPrices.do?by=asxCodes&asxCodes=%s"
-ASX_CODES = ['BEN', 'MCY', 'NHC', 'SCT', 'STU', 'WBC']
-NZX_CODES = ['AIR', 'ANZ', 'AWF', 'IFL', 'IFT', 'KFL', 'MEL', 'MVN', 'NCM', 'NZO', 'OIC', 'PRG', 'SKL', 'SPK', 'SPO', 'THL', 'TTK', 'TWR', 'WPL', 'WPP'] #TODO actually use this
 
 def is_price_row(row):
     return 'class' in row.attrs
@@ -28,18 +26,25 @@ def get_ASX_stock_prices(codes):
     return {row.find('th').text.strip(): row.find('td').text.strip() for row in rows}
 
 
-def get_NZX_stock_prices():
+def get_NZX_stock_prices(codes):
     page = r.get('https://www.nzx.com/markets/nzsx/securities')
     soup = bs4.BeautifulSoup(page.content, 'html.parser')
     prices = {}
     for security in soup.find_all('tr')[1:]:
         # TODO refactor to get specific nzx stock
         code, _, price, *_ = [aspect.text.strip('$\n') for aspect in security.find_all('td')]
-        if code in NZX_CODES:
+        if code in codes:
             prices[code] = price
     return prices
 
 
+def read_stock_codes():
+    codes = {}
+    with open('stock_codes.csv') as f:
+        for code in f.readlines():
+            stock, market = code.strip().split('.')
+            codes.setdefault(market, []).append(stock)
+    return codes
 
 
 def main(argv):
@@ -47,8 +52,25 @@ def main(argv):
         path = './fmt_stock_prices.csv'
     else:
         path = argv[1]
-    NZX_prices = get_NZX_stock_prices()
-    ASX_prices = get_ASX_stock_prices(ASX_CODES)
+
+    # Get stock codes
+    try:
+        all_codes = read_stock_codes()
+    except:
+        logging.error("Failed to read stock prices: The file 'stock_codes.csv' is missing or malformed")
+        exit()
+    asx_codes = all_codes.setdefault('AX', [])
+    nzx_codes = all_codes.setdefault('NZ', [])
+
+    # Get stock prices
+    try:
+        NZX_prices = get_NZX_stock_prices(nzx_codes)
+    except:
+        logging.error("Failed to retrieve NZX stock prices")
+    try:
+        ASX_prices = get_ASX_stock_prices(asx_codes)
+    except:
+        logging.error("Failed to retrieve ASX stock prices")
     all_prices = dict(NZX_prices, **ASX_prices)
 
     # Write to file for first time
@@ -59,7 +81,7 @@ def main(argv):
             codes = sorted(all_prices.keys())
             codes_market = []
             for code in codes:
-                if code in ASX_CODES:
+                if code in asx_codes:
                     codes_market.append('ASX')
                 else:
                     codes_market.append('NZX')
