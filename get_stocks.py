@@ -10,8 +10,12 @@ import sys
 
 from datetime import datetime
 
-#logging.basicConfig(filename='stock_price.log', level=logging.DEBUG)
-logging.StreamHandler(sys.stdout).setLevel(logging.DEBUG)
+logging.basicConfig(
+    # filename='stock_price.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%d/%m/%Y %I:%M:%S %p'
+)
 
 QUERY_URL_FMT = "http://www.asx.com.au/asx/markets/equityPrices.do?by=asxCodes&asxCodes=%s"
 
@@ -54,6 +58,7 @@ def main(argv):
         path = argv[1]
 
     # Get stock codes
+    logging.info("Reading stock codes")
     try:
         all_codes = read_stock_codes()
     except:
@@ -61,23 +66,30 @@ def main(argv):
         exit()
     asx_codes = all_codes.setdefault('AX', [])
     nzx_codes = all_codes.setdefault('NZ', [])
+    logging.info("Successfully read stock codes")
 
     # Get stock prices
+    logging.info("Getting NZX stock prices")
     try:
         NZX_prices = get_NZX_stock_prices(nzx_codes)
     except:
         logging.error("Failed to retrieve NZX stock prices")
+    logging.info("Successfully got NZX stock prices")
+
+    logging.info("Getting ASX stock prices")
     try:
         ASX_prices = get_ASX_stock_prices(asx_codes)
     except:
         logging.error("Failed to retrieve ASX stock prices")
+    logging.info("Successfully got ASX stock prices")
+
     all_prices = dict(NZX_prices, **ASX_prices)
 
     # Write to file for first time
     if not os.path.isfile(path):
+        logging.info("Stock prices file not found: Creating new one at %s" % os.path.abspath(path))
         with open(path, 'w') as f:
             csvwriter = csv.writer(f)
-            # Write stock market
             codes = sorted(all_prices.keys())
             codes_market = []
             for code in codes:
@@ -92,6 +104,7 @@ def main(argv):
 
     # Add new values
     # TODO Try refactor with numpy
+    logging.info("Adding current stock prices")
     with open(path, 'a') as f:
         # Write date + price
         # TODO Check if today's prices are already saved
@@ -99,6 +112,8 @@ def main(argv):
         today_date = format(datetime.now(), '%m/%d/%Y')
         prices = [price for code, price in sorted(all_prices.items())]
         csvwriter.writerow([today_date, *prices])
+        logging.info("Written")
+    logging.info("Complete")
 
 
 if __name__ == "__main__":
